@@ -394,11 +394,32 @@ static void configChannel () {
     writeReg(RegFrfLsb, (u1_t)(frf>> 0));
 }
 
-
-
-static void configPower () {
+static void configPower() {
 #ifdef CFG_sx1276_radio
-    // no boost used for now
+#ifdef CFG_sx1276_pa_boost
+	// set PA config (5-23 dBm using PA_BOOST)
+	s1_t pw = (s1_t)LMIC.txpow;
+	if (pw > 23) {
+		pw = 23;
+	} else if (pw < 5) {
+		pw = 5;
+	}
+
+	if (pw > 20) {
+		writeReg(0x4d, 0x07); // Enable
+		pw -= 3;
+	} else {
+		writeReg(0x4d, 0x04); // Disable
+	}
+
+	writeReg(RegPaConfig, (u1_t)(0x80|(pw-5))); 
+
+#if LMIC_DEBUG_LEVEL > 0
+	 lmic_printf("%lu: CONFIGPOWER PA_BOOST txpow=%d pw=%d xxx=%d\n", os_getTime(), LMIC.txpow, pw, (u1_t)(0x80|(pw-5)) );
+#endif
+
+#else
+    // no boost 
     s1_t pw = (s1_t)LMIC.txpow;
     if(pw >= 17) {
         pw = 15;
@@ -408,6 +429,13 @@ static void configPower () {
     // check board type for BOOST pin
     writeReg(RegPaConfig, (u1_t)(0x80|(pw&0xf)));
     writeReg(RegPaDac, readReg(RegPaDac)|0x4);
+
+#if LMIC_DEBUG_LEVEL > 0
+	 lmic_printf("%lu: CONFIGPOWER txpow=%d pw=%d xxx=%d\n", os_getTime(), LMIC.txpow, pw, (u1_t)(0x80|(pw&0xf)) );
+#endif
+
+#endif
+
 
 #elif CFG_sx1272_radio
     // set PA config (2-17 dBm using PA_BOOST)
@@ -509,8 +537,8 @@ static void txlora () {
     u1_t sf = getSf(LMIC.rps) + 6; // 1 == SF7
     u1_t bw = getBw(LMIC.rps);
     u1_t cr = getCr(LMIC.rps);
-    lmic_printf("%lu: TXMODE, freq=%lu, len=%d, SF=%d, BW=%d, CR=4/%d, IH=%d\n",
-           os_getTime(), LMIC.freq, LMIC.dataLen, sf,
+    lmic_printf("%lu: TXMODE, txpow=%d adrTxPow=%d freq=%lu, len=%d, SF=%d, BW=%d, CR=4/%d, IH=%d\n",
+           os_getTime(), LMIC.txpow, LMIC.adrTxPow, LMIC.freq, LMIC.dataLen, sf,
            bw == BW125 ? 125 : (bw == BW250 ? 250 : 500),
            cr == CR_4_5 ? 5 : (cr == CR_4_6 ? 6 : (cr == CR_4_7 ? 7 : 8)),
            getIh(LMIC.rps)

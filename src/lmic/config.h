@@ -14,6 +14,9 @@
 // the HopeRF RFM95 boards.
 #define CFG_sx1276_radio 1
 
+// Use PA_BOOST 
+#define CFG_sx1276_pa_boost 1
+
 // 16 μs per tick
 // LMIC requires ticks to be 15.5μs - 100 μs long
 #define US_PER_OSTICK_EXPONENT 4

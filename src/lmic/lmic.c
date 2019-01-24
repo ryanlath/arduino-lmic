@@ -823,12 +823,13 @@ static u1_t mapChannels (u1_t chpage, u2_t chmap) {
 
 static void updateTx (ostime_t txbeg) {
     u1_t chnl = LMIC.txChnl;
+	LMIC.txpow = LMIC.adrTxPow;
+
     if( chnl < 64 ) {
         LMIC.freq = US915_125kHz_UPFBASE + chnl*US915_125kHz_UPFSTEP;
-        LMIC.txpow = 30;
         return;
     }
-    LMIC.txpow = 26;
+
     if( chnl < 64+8 ) {
         LMIC.freq = US915_500kHz_UPFBASE + (chnl-64)*US915_500kHz_UPFSTEP;
     } else {

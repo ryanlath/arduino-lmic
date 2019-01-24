@@ -214,8 +214,8 @@ void setup() {
     // TTN uses SF9 for its RX2 window.
     LMIC.dn2Dr = DR_SF9;
 
-    // Set data rate and transmit power for uplink (note: txpow seems to be ignored by the library)
-    LMIC_setDrTxpow(DR_SF7,14);
+    // Set data rate and transmit power for uplink
+    LMIC_setDrTxpow(DR_SF7,17);
 
     // Start job
     do_send(&sendjob);
