@@ -397,41 +397,38 @@ static void configChannel () {
 static void configPower() {
 #ifdef CFG_sx1276_radio
 #ifdef CFG_sx1276_pa_boost
-	// set PA config (5-23 dBm using PA_BOOST)
+	// set PA config (2-20 dBm using PA_BOOST)
 	s1_t pw = (s1_t)LMIC.txpow;
-	if (pw > 23) {
-		pw = 23;
-	} else if (pw < 5) {
-		pw = 5;
-	}
-
-	if (pw > 20) {
-		writeReg(0x4d, 0x07); // Enable
-		pw -= 3;
+	if (pw > 17) {
+		writeReg(0x4d, 0x07); // Enable highpower
+		if (pw > 20) {
+			pw = 20;
+		}
+		writeReg(RegPaConfig, (u1_t)(0x80|(pw-5))); 
 	} else {
-		writeReg(0x4d, 0x04); // Disable
+		writeReg(0x4d, 0x04); // Disable highpower
+		if (pw < 2) {
+			pw = 2;
+		}
+		writeReg(RegPaConfig, (u1_t)(0x80|(pw-2))); 
 	}
-
-	writeReg(RegPaConfig, (u1_t)(0x80|(pw-5))); 
 
 #if LMIC_DEBUG_LEVEL > 0
-	 lmic_printf("%lu: CONFIGPOWER PA_BOOST txpow=%d pw=%d xxx=%d\n", os_getTime(), LMIC.txpow, pw, (u1_t)(0x80|(pw-5)) );
+	 lmic_printf("%lu: CONFIGPOWER PA_BOOST txpow=%d pw=%d\n", os_getTime(), LMIC.txpow, pw);
 #endif
 
-#else
-    // no boost 
+#else // RFO
     s1_t pw = (s1_t)LMIC.txpow;
-    if(pw >= 17) {
-        pw = 15;
-    } else if(pw < 2) {
-        pw = 2;
+    if (pw > 14) {
+        pw = 14;
+    } else if (pw < -1) {
+        pw = -1;
     }
-    // check board type for BOOST pin
-    writeReg(RegPaConfig, (u1_t)(0x80|(pw&0xf)));
-    writeReg(RegPaDac, readReg(RegPaDac)|0x4);
+    writeReg(RegPaConfig, (u1_t)(0x70|(pw+1)));
+    writeReg(0x4D, readReg(0x4D));
 
 #if LMIC_DEBUG_LEVEL > 0
-	 lmic_printf("%lu: CONFIGPOWER txpow=%d pw=%d xxx=%d\n", os_getTime(), LMIC.txpow, pw, (u1_t)(0x80|(pw&0xf)) );
+	 lmic_printf("%lu: CONFIGPOWER RFO txpow=%d pw=%d\n", os_getTime(), LMIC.txpow, pw);
 #endif
 
 #endif
@@ -537,8 +534,9 @@ static void txlora () {
     u1_t sf = getSf(LMIC.rps) + 6; // 1 == SF7
     u1_t bw = getBw(LMIC.rps);
     u1_t cr = getCr(LMIC.rps);
-    lmic_printf("%lu: TXMODE, txpow=%d adrTxPow=%d freq=%lu, len=%d, SF=%d, BW=%d, CR=4/%d, IH=%d\n",
-           os_getTime(), LMIC.txpow, LMIC.adrTxPow, LMIC.freq, LMIC.dataLen, sf,
+
+    lmic_printf("%lu: TXMODE, freq=%lu, len=%d, SF=%d, BW=%d, CR=4/%d, IH=%d\n",
+           os_getTime(), LMIC.freq, LMIC.dataLen, sf,
            bw == BW125 ? 125 : (bw == BW250 ? 250 : 500),
            cr == CR_4_5 ? 5 : (cr == CR_4_6 ? 6 : (cr == CR_4_7 ? 7 : 8)),
            getIh(LMIC.rps)
