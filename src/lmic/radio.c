@@ -767,13 +767,6 @@ u1_t radio_rand1 () {
     return v;
 }
 
-u1_t radio_rssi () {
-    hal_disableIRQs();
-    u1_t r = readReg(LORARegRssiValue);
-    hal_enableIRQs();
-    return r;
-}
-
 static CONST_TABLE(u2_t, LORA_RXDONE_FIXUP)[] = {
     [FSK]  =     us2osticks(0), // (   0 ticks)
     [SF7]  =     us2osticks(0), // (   0 ticks)
@@ -810,8 +803,25 @@ void radio_irq_handler (u1_t dio) {
             // now read the FIFO
             readBuf(RegFifo, LMIC.frame, LMIC.dataLen);
             // read rx quality parameters
-            LMIC.snr  = readReg(LORARegPktSnrValue); // SNR [dB] * 4
-            LMIC.rssi = readReg(LORARegPktRssiValue) - 125 + 64; // RSSI [dBm] (-196...+63)
+            //LMIC.snr  = readReg(LORARegPktSnrValue); // SNR [dB] * 4
+            //LMIC.rssi = readReg(LORARegPktRssiValue) - 125 + 64; // RSSI [dBm] (-196...+63)
+			////TODO: NOT TESTED
+			if ( readReg(LORARegPktSnrValue) & 0x80 ) {
+			  LMIC.snr = ( ( ~readReg(LORARegPktSnrValue) + 1 ) & 0xFF ) >> 2;
+			  LMIC.snr = - LMIC.snr;
+			} else {
+			  LMIC.snr = ( readReg(LORARegPktSnrValue) & 0xFF ) >> 2;
+			}
+			int16_t rssi = readReg(LORARegPktRssiValue);
+			if (LMIC.snr < 0) {
+				LMIC.rssi = -157 + rssi + (rssi >> 4) + LMIC.snr;
+			} else {
+				LMIC.rssi = -157 + rssi + (rssi >> 4);
+				//LMIC.rssi = -157 + 16/15 * (rssi + (rssi >> 4));
+			}
+#if LMIC_DEBUG_LEVEL > 0
+        lmic_printf("%lu: RSSI: %d vs %d SNR: %d vs %d\n", now, LMIC.rssi, LMIC.snr, readReg(LORARegPktRssiValue) - 125 + 64, readReg(LORARegPktSnrValue));
+#endif
         } else if( flags & IRQ_LORA_RXTOUT_MASK ) {
             // indicate timeout
             LMIC.dataLen = 0;

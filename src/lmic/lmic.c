@@ -908,7 +908,8 @@ static ostime_t nextJoinState (void) {
     } else {
         LMIC.txChnl = os_getRndU1() & 0x3F;
         s1_t dr = DR_SF7 - ++LMIC.txCnt;
-        if( dr < DR_SF10 ) {
+        //if( dr < DR_SF10 ) { #PR #197
+		if( LMIC.txCnt > DR_SF7 ) {
             dr = DR_SF10;
             failed = 1; // All DR exhausted - signal failed
         }

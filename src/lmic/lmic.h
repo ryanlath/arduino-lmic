@@ -153,8 +153,10 @@ struct lmic_t {
     ostime_t    txend;
     ostime_t    rxtime;
     u4_t        freq;
-    s1_t        rssi;
-    s1_t        snr;
+    //s1_t        rssi;
+    //s1_t        snr;
+    int16_t     rssi;
+    int8_t      snr;
     rps_t       rps;
     u1_t        rxsyms;
     u1_t        dndr;

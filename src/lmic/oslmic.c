@@ -117,7 +117,7 @@ void os_runloop_once() {
             has_deadline = true;
         #endif
     } else { // nothing pending
-        hal_sleep(); // wake by irq (timer already restarted)
+        hal_sleep(); // not implemented!
     }
     hal_enableIRQs();
     if(j) { // run job callback
