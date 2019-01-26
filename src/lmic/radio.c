@@ -803,9 +803,6 @@ void radio_irq_handler (u1_t dio) {
             // now read the FIFO
             readBuf(RegFifo, LMIC.frame, LMIC.dataLen);
             // read rx quality parameters
-            //LMIC.snr  = readReg(LORARegPktSnrValue); // SNR [dB] * 4
-            //LMIC.rssi = readReg(LORARegPktRssiValue) - 125 + 64; // RSSI [dBm] (-196...+63)
-			////TODO: NOT TESTED
 			if ( readReg(LORARegPktSnrValue) & 0x80 ) {
 			  LMIC.snr = ( ( ~readReg(LORARegPktSnrValue) + 1 ) & 0xFF ) >> 2;
 			  LMIC.snr = - LMIC.snr;
@@ -817,10 +814,9 @@ void radio_irq_handler (u1_t dio) {
 				LMIC.rssi = -157 + rssi + (rssi >> 4) + LMIC.snr;
 			} else {
 				LMIC.rssi = -157 + rssi + (rssi >> 4);
-				//LMIC.rssi = -157 + 16/15 * (rssi + (rssi >> 4));
 			}
 #if LMIC_DEBUG_LEVEL > 0
-        lmic_printf("%lu: RSSI: %d vs %d SNR: %d vs %d\n", now, LMIC.rssi, LMIC.snr, readReg(LORARegPktRssiValue) - 125 + 64, readReg(LORARegPktSnrValue));
+        lmic_printf("%lu: RSSI: %d SNR: %d\n", now, LMIC.rssi, LMIC.snr);
 #endif
         } else if( flags & IRQ_LORA_RXTOUT_MASK ) {
             // indicate timeout
